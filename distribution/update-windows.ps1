@@ -54,7 +54,8 @@ try {
     throw
   }
   $installedUpdater = Join-Path $base 'ASIN-Pulse-Setup.cmd'
-  if ([IO.Path]::GetFullPath($env:ASIN_PULSE_UPDATER) -ne [IO.Path]::GetFullPath($installedUpdater)) { Copy-Item -LiteralPath $env:ASIN_PULSE_UPDATER -Destination $installedUpdater -Force }
+  $newUpdater = Join-Path $package 'ASIN-Pulse-Setup.cmd'
+  if ([IO.Path]::GetFullPath($newUpdater) -ne [IO.Path]::GetFullPath($installedUpdater)) { Copy-Item -LiteralPath $newUpdater -Destination $installedUpdater -Force }
   if ($env:ASIN_PULSE_SETUP_TEST -ne '1') {
   $desktop = [Environment]::GetFolderPath('Desktop')
   $shell = New-Object -ComObject WScript.Shell
@@ -83,7 +84,7 @@ try {
   }
 } catch {
   Write-Host $_.Exception.Message -ForegroundColor Red
-  Read-Host 'Press Enter to close'
+  if ($env:ASIN_PULSE_SETUP_TEST -ne '1') { Read-Host 'Press Enter to close' }
   exit 1
 } finally {
   if (Test-Path $temp) { Remove-Item -LiteralPath $temp -Recurse -Force }

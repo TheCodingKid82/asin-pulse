@@ -4,3 +4,4 @@
 .header-actions{flex-wrap:wrap;justify-content:flex-end}
 
 .filters{flex-wrap:wrap}.filters label{min-width:110px}.filters input[type="number"]{width:110px}.filters #rank-category{width:170px}.amount small{display:block;font-size:11px;white-space:normal;font-weight:400;max-width:160px}.filter-help{padding:0 20px}
+.filters label{width:110px;min-width:110px;max-width:none}.filters label:has(#rank-category){width:170px;min-width:170px}.filters #rank-category{width:100%}
