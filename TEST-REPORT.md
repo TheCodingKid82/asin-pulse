@@ -8,7 +8,7 @@ The 21-test Node suite covers retailer URL validation, identity/variation confli
 
 Parser regressions include real page fragments from Carter’s and Boscov’s. These are local replay tests, not assertions that future retailer pages will never change.
 
-The release workflow also runs the packaged Windows installer twice: a fresh installation and an update preserving the stable installation path and rollback copy. Only successful runs publish a release.
+The release workflow loads the packaged extension in isolated Chromium to verify its real storage, filters, and self-reload/reopen behavior. It also runs the packaged Windows installer twice: a fresh installation and an update preserving the stable installation path and rollback copy. Only successful runs publish a release.
 
 ## Live observations
 
