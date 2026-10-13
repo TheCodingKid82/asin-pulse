@@ -5,6 +5,12 @@ const {chromium}=require('playwright'),assert=require('node:assert/strict'),fs=r
  const context=await chromium.launchPersistentContext('',{channel:'chromium',headless:true,args:[`--disable-extensions-except=${root}`,`--load-extension=${root}`]});
  try{
   let [worker]=context.serviceWorkers();if(!worker)worker=await context.waitForEvent('serviceworker',{timeout:20000});assert.equal(worker.url().split('/')[2],config.extensionId);
+  // Match the real one-time installation guide. Command-line sideloading initially
+  // works with Developer mode off, but Chromium disables it on runtime.reload().
+  const manager=await context.newPage();await manager.goto('chrome://extensions');
+  const developerMode=manager.locator('#devMode');
+  if(!await developerMode.evaluate(el=>el.checked))await developerMode.click();
+  await manager.close();
   const url=`chrome-extension://${config.extensionId}/`,page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));await page.goto(url+'sourcing.html');await page.waitForFunction(()=>document.getElementById('retailer').options.length===7);
   const manifest=await page.evaluate(()=>chrome.runtime.getManifest());assert.equal(manifest.version,'2.2.0');
   await page.evaluate(async()=>{
