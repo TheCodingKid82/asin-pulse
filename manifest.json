@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "ASIN Pulse — Sales & Sourcing",
-  "version": "2.1.0",
+  "version": "2.2.0",
   "description": "Scan retail categories, find Amazon product matches, compare sourcing costs and estimated profit, and view monthly purchase signals.",
   "minimum_chrome_version": "114",
   "permissions": [
@@ -21,7 +21,11 @@
     "https://www.walmart.com/*",
     "https://www.kohls.com/*",
     "https://www.macys.com/*",
-    "https://www.jcpenney.com/*"
+    "https://www.jcpenney.com/*",
+    "https://www.carters.com/*",
+    "https://carters.com/*",
+    "https://www.boscovs.com/*",
+    "https://boscovs.com/*"
   ],
   "background": {
     "service_worker": "background.js"
@@ -54,5 +58,6 @@
   ],
   "content_security_policy": {
     "extension_pages": "script-src 'self'; object-src 'none'"
-  }
+  },
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAuh2ypvUiqMVuvHtcZz/Sq2Gka32SMR/gpSWU3Yqp/dTPB4bl1CHDpkHnxOncNn41CLBcNydnSfHIeNVCi8YiLcseATymp8Qt2Iw1B57dKS9HpfA/Od97YWT5hr7zaU68J5rFfhUj6Pf03Hb6yEqxAJONNYHNxZRE5etlPicM0pJJklrv41ZcOpzrwejdV3o+/ydKJpXFdI/7lCTtKK12vYMyi4CX9hhVVdFqiEfvzhRFMWVVhtt7bx+eMlPwrbElbxbRrGwHOMWV7lTf/voGTD+GJ/KXGL94rp16ui9jLy3dLRIAyKLf98ZQ6I17qlmInvN+tRUo2Hm9e9XgdciaUQIDAQAB"
 }

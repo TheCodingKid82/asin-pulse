@@ -19,7 +19,7 @@ const ui=AsinPulseUI.mount(document.getElementById('app'),{
 async function load(){
   generation++; ui.status('');
   [currentTab]=await chrome.tabs.query({active:true,currentWindow:true});
-  document.getElementById('capture-retail').hidden=!/^https:\/\/www\.(target|walmart|kohls|macys|jcpenney)\.com\//.test(currentTab?.url||'');
+  document.getElementById('capture-retail').hidden=!/^https:\/\/(?:www\.)?(target|walmart|kohls|carters|boscovs|macys|jcpenney)\.com\//.test(currentTab?.url||'');
   if(!AsinPulse.productUrl(currentTab?.url)){snapshot=null;ui.render(null);return;}
   try{
     try{snapshot=await chrome.tabs.sendMessage(currentTab.id,{type:'GET_SNAPSHOT'});}

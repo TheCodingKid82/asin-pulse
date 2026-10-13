@@ -1,0 +1,65 @@
+name: Test and publish latest ASIN Pulse
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: asin-pulse-release
+  cancel-in-progress: false
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - run: npm test
+      - run: python3 scripts/package.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release
+          path: artifacts/
+  windows-installer:
+    needs: test
+    runs-on: windows-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: release
+          path: artifacts
+      - name: Exercise the actual Windows installer
+        shell: pwsh
+        run: |
+          $env:LOCALAPPDATA = Join-Path $env:RUNNER_TEMP 'asin-pulse-installer-test'
+          $env:ASIN_PULSE_SETUP_TEST = '1'
+          Expand-Archive artifacts/ASIN-Pulse.zip package
+          cmd /c package\ASIN-Pulse-Setup.cmd
+          if ($LASTEXITCODE -ne 0) { throw 'Installer failed' }
+          $installed = Join-Path $env:LOCALAPPDATA 'ASINPulse/extension/manifest.json'
+          if (!(Test-Path $installed)) { throw 'No installed extension' }
+          # Updating a second time must preserve the path and keep a rollback copy.
+          cmd /c package\ASIN-Pulse-Setup.cmd
+          if ($LASTEXITCODE -ne 0) { throw 'Update failed' }
+          if (!(Test-Path (Join-Path $env:LOCALAPPDATA 'ASINPulse/extension-backup/manifest.json'))) { throw 'No rollback copy' }
+  publish:
+    needs: windows-installer
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: release
+          path: artifacts
+      - name: Publish latest tested release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          VERSION=$(node -p "require('./manifest.json').version")
+          gh release create "build-${GITHUB_RUN_NUMBER}" artifacts/ASIN-Pulse.zip artifacts/ASIN-Pulse.zip.sha256 artifacts/ASIN-Pulse-Setup.cmd --target "$GITHUB_SHA" --title "ASIN Pulse ${VERSION} — build ${GITHUB_RUN_NUMBER}" --notes "Latest tested build. New users: download ASIN-Pulse-Setup.cmd and run it. Existing users: double-click Update ASIN Pulse on your desktop. Finish or pause a scan before updating. If this repository is private, download ASIN-Pulse.zip while signed in, extract it, and run the included setup." --latest

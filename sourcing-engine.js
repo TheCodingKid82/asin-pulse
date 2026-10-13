@@ -21,7 +21,7 @@
       // Target's virtual product grid does not render in a background tab.
       try{const current=await chrome.tabs.get(this.tabId);if(!this.reuseCurrent||current.url!==url)await chrome.tabs.update(this.tabId,{url,active:true});else await chrome.tabs.update(this.tabId,{active:true});this.reuseCurrent=false;}catch{throw new ScanError('The scan tab was closed. Resume to create a new scan tab.','closed');}
       const start=Date.now();
-      let result=null,lastSignature='',stable=0;
+      let result=null,lastSignature='',stable=0,readyObserved=false;
       // Read the product as soon as its data settles; ads may never finish loading.
       while(Date.now()-start<20000){
         await this.check();await wait(650);
@@ -29,17 +29,18 @@
         try{
           await this.inject();const next=await this.script(kind);
           const actual=next?.url?new URL(next.documentUrl||next.url):null,requested=new URL(url);
-          if(!actual||actual.hostname!==requested.hostname||actual.pathname!==requested.pathname||kind==='amazonSearch'&&actual.searchParams.get('k')!==requested.searchParams.get('k'))continue;
+          if(!actual||actual.hostname.replace(/^www\./,'')!==requested.hostname.replace(/^www\./,'')||actual.pathname!==requested.pathname||kind==='amazonSearch'&&actual.searchParams.get('k')!==requested.searchParams.get('k'))continue;
           if(next.blocked)throw new ScanError('A page check is required. Open the scan tab, then resume.','blocked');
           result=next;
           if(kind==='retail'&&next.isProduct&&await this.script('prepareDetails')){stable=0;continue;}
-          const ready=kind==='amazonProduct'?!next.missing&&next.title&&next.price>0:next.products?.some(p=>p.price>0)||next.categoryLinks?.length||next.emptyResults;
+          const ready=kind==='amazonProduct'?!next.missing&&next.title:next.products?.some(p=>p.price>0)||next.variantProducts?.some(p=>p.price>0)||next.categoryLinks?.length||next.emptyResults;
+          readyObserved=Boolean(ready);
           const signature=JSON.stringify(kind==='amazonProduct'?[next.asin,next.title,next.price,next.model,next.gtins]:[next.products?.map(p=>[p.url,p.price]),next.categoryLinks]);
           stable=ready&&signature===lastSignature?stable+1:0;lastSignature=signature;
           if(stable>=1&&Date.now()-start>=1300)break;
         }catch(error){if(['blocked','pause','closed'].includes(error.code))throw error;}
       }
-      if(!result)throw new ScanError('The page did not become readable within 20 seconds. Open the scan tab and resume.','read');
+      if(!result||!readyObserved)throw new ScanError('The page did not become readable within 20 seconds. Open the scan tab and resume.','read');
       const ms=Date.now()-start;this.metrics.pages++;this.metrics.totalMs+=ms;this.metrics.recent.push({url,kind,ms,products:result.products?.length,missing:result.missing});this.metrics.recent=this.metrics.recent.slice(-40);
       return result;
     }
@@ -52,7 +53,7 @@
       if(result.blocked)throw new ScanError('A retailer page check is required.','blocked');
       if(result.expandCategories&&result.department){await this.script('advance','categories');await wait(650);result=await this.script('retail');}
       if(result.department&&result.categoryLinks?.length||!result.products?.length&&result.categoryLinks?.length)return result;
-      if(result.isProduct)return result;
+      if(result.isProduct)return result.variantProducts?.length?{...result,products:result.variantProducts}:result;
       const merged=new Map((result.products||[]).map(p=>[p.url,p]));let still=0,lastHeight=0;
       if(maxProducts&&merged.size>=maxProducts)return {...result,products:[...merged.values()]};
       // Load lazy cards and retailer Load more controls before looking for Next.
@@ -83,8 +84,8 @@
   }
   class Runner{
     constructor({reader,save,onChange=()=>{},shouldStop=()=>false}){this.reader=reader;this.save=save;this.onChange=onChange;this.shouldStop=shouldStop;this.asinCache=new Map();}
-    async checkpoint(job){job.updatedAt=new Date().toISOString();job.engineVersion='2.1';if(this.reader.metrics)job.metrics=this.reader.metrics;await this.save(job);this.onChange(job);}
-    async amazon(url){const asin=url.match(/\/dp\/([A-Z0-9]{10})/)?.[1];if(asin&&this.asinCache.has(asin))return this.asinCache.get(asin);const p=await this.reader.open(url,'amazonProduct');if(!p.missing&&asin)this.asinCache.set(asin,p);return p;}
+    async checkpoint(job){job.updatedAt=new Date().toISOString();job.engineVersion='2.2';if(this.reader.metrics)job.metrics=this.reader.metrics;await this.save(job);this.onChange(job);}
+    async amazon(url){const asin=url.match(/\/dp\/([A-Z0-9]{10})/)?.[1];if(asin&&this.asinCache.has(asin))return this.asinCache.get(asin);const p=await this.reader.open(url,'amazonProduct');if(!p.missing&&p.asin)this.asinCache.set(p.asin,p);return p;}
     async run(job){
       job.status='running';await this.checkpoint(job);
       try{
@@ -145,7 +146,14 @@
         try{
           const detail=await this.reader.open(lead.source.url,'retail');
           const canonical=new URL(lead.source.url).pathname;
-          const item=detail.products?.find(p=>new URL(p.url).pathname===canonical)|| (detail.isProduct&&detail.products?.length===1?detail.products[0]:null);
+          // A clothing style can expose distinct, priced SKU variants. Compare each
+          // exact size/color instead of assigning a parent style's price to a random ASIN.
+          const variants=detail.variantProducts||[];
+          if(variants.length){
+            const known=new Set(job.leads.map(l=>l.source.url));
+            for(const source of variants.slice(1))if(!known.has(source.url)){known.add(source.url);job.leads.push({id:crypto.randomUUID(),source:{...source,parentUrl:lead.source.url},status:'queued',candidates:[],selected:0,confirmed:false,saved:false});}
+          }
+          const item=variants[0]||detail.products?.find(p=>new URL(p.url).pathname===canonical)|| (detail.isProduct&&detail.products?.length===1?detail.products[0]:null);
           lead.retailDiagnostic=detail.diagnostic;
           if(item){lead.source={...lead.source,...item,detailVerified:item.price>0,gtins:item.gtins?.length?item.gtins:lead.source.gtins,brand:item.brand||lead.source.brand,model:item.model||lead.source.model};}
           else {lead.source.detailVerified=false;lead.note='Retail product details could not be verified; category price is only a lead.';}

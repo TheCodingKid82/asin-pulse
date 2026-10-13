@@ -48,3 +48,12 @@ chrome.runtime.onMessage.addListener((message,sender,reply)=>{
     lookup(message.asin,message.domain).then(result=>reply({ok:true,...result})).catch(error=>reply({ok:false,error:error.message}));return true;
   }
 });
+
+// The desktop updater opens update.html after replacing the local package.
+// Reopen the desk once the new service worker starts; no Chrome profile data is removed.
+ready.then(async()=>{
+  const {reopenAfterUpdate}=await chrome.storage.local.get('reopenAfterUpdate');
+  if(!reopenAfterUpdate)return;
+  await chrome.storage.local.remove('reopenAfterUpdate');
+  if(Date.now()-reopenAfterUpdate<300000)await chrome.tabs.create({url:chrome.runtime.getURL('sourcing.html?updated=1')});
+});

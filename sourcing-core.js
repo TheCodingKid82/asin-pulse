@@ -1,13 +1,13 @@
 (function(root){
   'use strict';
   const clean=v=>String(v??'').replace(/[\u200e\u200f]/g,'').replace(/\s+/g,' ').trim();
-  const number=v=>v===''||v===null||v===undefined?null:Number.isFinite(Number(v))?Number(v):null;
+  const number=v=>v===null||v===undefined||typeof v==='string'&&!v.trim()?null:Number.isFinite(Number(v))?Number(v):null;
   const money=v=>Math.round((v+Number.EPSILON)*100)/100;
   function safeUrl(value,base){
     if(typeof value!=='string'||!value.trim())return null;
     try{const u=new URL(value,base);if(u.protocol!=='https:'||u.username||u.password||!u.hostname.includes('.')||/^(localhost|127\.|0\.|10\.|192\.168\.|169\.254\.|172\.(1[6-9]|2\d|3[01])\.)/.test(u.hostname)||u.hostname.includes(':'))return null;u.hash='';return u.href;}catch{return null;}
   }
-  function retailUrl(value){const u=safeUrl(value);if(!u)return null;const url=new URL(u);const host=url.hostname.replace(/^www\./,'');if(!['target.com','walmart.com','kohls.com','macys.com','jcpenney.com'].includes(host))return null;url.hostname='www.'+host;return url.href;}
+  function retailUrl(value){const u=safeUrl(value);if(!u)return null;const url=new URL(u);const host=url.hostname.replace(/^www\./,'');if(!['target.com','walmart.com','kohls.com','carters.com','boscovs.com','macys.com','jcpenney.com'].includes(host))return null;url.hostname='www.'+host;return url.href;}
   function gtin(value){
     const s=String(value??'').replace(/[\s-]/g,'');if(!/^\d{8}$|^\d{12,14}$/.test(s)||/^0+$/.test(s))return null;
     let sum=0;for(let i=s.length-2,weight=3;i>=0;i--,weight=weight===3?1:3)sum+=Number(s[i])*weight;
@@ -62,7 +62,7 @@
     if(reasons.length)return {level:'conflict',score:0,reasons};
     const unknownPack=Boolean((sa.pack||ta.pack)&&sa.pack!==ta.pack || (sa.size||ta.size)&&sa.size!==ta.size);
     const unknownColor=Boolean((sa.color||ta.color)&&sa.color!==ta.color);
-    if(id&&!unknownPack&&!source.variantUnresolved&&!target.variantUnresolved)return {level:'identifier',score:100,reasons:['Matching valid UPC / GTIN; no detected attribute conflicts']};
+    if(id&&!unknownPack&&!unknownColor&&!source.variantUnresolved&&!target.variantUnresolved)return {level:'identifier',score:100,reasons:['Matching valid UPC / GTIN; no detected attribute conflicts']};
     const aw=words(source.title),bw=words(target.title);const intersection=[...aw].filter(w=>bw.has(w)).length;
     const similarity=aw.size&&bw.size?2*intersection/(aw.size+bw.size):0;
     const contained=aw.size>=4&&intersection/aw.size>=.8;
@@ -109,7 +109,7 @@
     rows.slice(0,500).forEach((r,i)=>{
       const data=Object.fromEntries(headers.map((h,j)=>[h,clean(r[j])]));
       const title=data.title||data.product_name||data.name;const url=retailUrl(data.url||data.retail_url||data.source_url);const p=price(data.price||data.retail_price||data.cost);
-      if(!title||!url||p===null){errors.push(`Row ${i+2}: title, HTTPS URL at one of the five supported retailers, and positive price required.`);return;}
+      if(!title||!url||p===null){errors.push(`Row ${i+2}: title, HTTPS URL at a supported retailer, and positive price required.`);return;}
       const upc=data.upc||data.gtin||data.ean;
       if(upc&&!gtin(upc)){errors.push(`Row ${i+2}: invalid UPC / GTIN checksum.`);return;}
       if(data.pack&&(!Number.isInteger(Number(data.pack))||Number(data.pack)<1)){errors.push(`Row ${i+2}: pack must be a positive whole number.`);return;}
@@ -120,7 +120,28 @@
   }
   function csvExport(rows){return '\uFEFF'+rows.map(row=>row.map(value=>{let s=String(value??'');if(/^[=+\-@\t\r\n]/.test(s))s="'"+s;return '"'+s.replace(/"/g,'""')+'"';}).join(',')).join('\r\n');}
   function searchQueries(p){const id=identity(p);return [...new Set([id.brand&&id.model?`${id.brand} ${id.model}`:'',...(p.gtins||[]).filter(gtin).map(v=>String(v).replace(/[\s-]/g,'')),clean(p.title).split(' ').slice(0,15).join(' ')].filter(Boolean))].slice(0,3);}
-  function comparable(lead){const p=lead.candidates?.[lead.selected||0];return Boolean(p&&p.match?.level!=='conflict'&&(['identifier','model'].includes(p.match?.level)||lead.confirmed)&&p.availability!=='out'&&lead.source.availability!=='out'&&p.condition!=='used'&&lead.source.detailVerified!==false);}
-  root.Sourcing={clean,number,money,safeUrl,retailUrl,gtin,price,norm,identity,attributes,match,comparable,costs,defaults,csvRows,importCsv,csvExport,searchQueries};
+  function salesRank(value){
+    if(value && typeof value==='object' && Number.isSafeInteger(value.value)&&value.value>0)return {value:value.value,category:clean(value.category),text:clean(value.text)};
+    const raw=clean(value),m=raw.match(/#\s*([\d,]+)\s+in\s+(.+?)(?=\s*\(|\s*#|$)/i);
+    if(!m)return null;
+    const rank=Number(m[1].replace(/,/g,''));
+    return Number.isSafeInteger(rank)&&rank>0?{value:rank,category:clean(m[2]),text:raw}:null;
+  }
+  function filterLead(lead,filters={},settings={}){
+    const p=lead.candidates?.[lead.selected||0],eligible=comparable(lead);
+    const c=eligible?costs(lead.source,p,{...settings,...lead.fees}):{ready:false,spread:null};
+    const kind=filters.kind||'all';
+    if(filters.text&&!`${lead.source.title} ${lead.source.brand||''} ${p?.asin||''} ${p?.title||''}`.toLowerCase().includes(filters.text.toLowerCase()))return false;
+    if(kind==='saved'&&!lead.saved||kind==='confirmed'&&!lead.confirmed||kind==='identifier'&&p?.match?.level!=='identifier'||kind==='model'&&p?.match?.level!=='model'||kind==='review'&&(!p||lead.confirmed||['identifier','model'].includes(p.match?.level)))return false;
+    if(kind==='cheaper'&&!(eligible&&c.spread>0)||kind==='profit'&&!(eligible&&c.ready&&c.profit>0))return false;
+    const price=filters.priceSource==='amazon'?(p?.currency==='USD'?number(p.price):null):(lead.source.currency==='USD'?number(lead.source.price):null);
+    const rank=salesRank(p?.salesRank||p?.rank);
+    const bounds=[['minPrice',price,1],['maxPrice',price,-1],['minSpread',eligible?c.spread:null,1],['minRank',rank?.value,1],['maxRank',rank?.value,-1],['minProfit',c.ready?c.profit:null,1],['minRoi',c.ready?c.roi:null,1]];
+    for(const [key,value,direction] of bounds){const n=number(filters[key]);if(n!==null&&(value==null||!Number.isFinite(value)||(direction===1?value<n:value>n)))return false;}
+    if(filters.rankCategory&&(!rank||!rank.category.toLowerCase().includes(filters.rankCategory.toLowerCase())))return false;
+    return true;
+  }
+  function comparable(lead){const p=lead.candidates?.[lead.selected||0];return Boolean(p&&p.match?.level!=='conflict'&&(['identifier','model'].includes(p.match?.level)||lead.confirmed)&&p.availability!=='out'&&lead.source.availability!=='out'&&p.condition!=='used'&&lead.source.detailVerified===true);}
+  root.Sourcing={clean,number,money,safeUrl,retailUrl,gtin,price,norm,identity,attributes,match,comparable,costs,defaults,csvRows,importCsv,csvExport,searchQueries,salesRank,filterLead};
   if(typeof module!=='undefined'&&module.exports)module.exports=root.Sourcing;
 })(globalThis);
