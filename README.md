@@ -17,7 +17,7 @@ Two shortcuts appear on your desktop:
 - **ASIN Pulse** opens the app.
 - **Update ASIN Pulse** downloads the latest version, reloads the extension, and reopens the app. Finish or pause any running scan before updating.
 
-Your saved scans and settings remain in the same Chrome profile. Keep using the same install folder and profile. No Git commands, Node, or development tools are needed. Chrome may display a Developer mode reminder. This is a locally installed extension, not a Chrome Web Store listing.
+Your saved scans, filters, fee assumptions, and previous scan store/URL/limit remain in the same Chrome profile. Keep using the same install folder and profile. No Git commands, Node, or development tools are needed. Chrome may display a Developer mode reminder. This is a locally installed extension, not a Chrome Web Store listing.
 
 If the repository is private, first sign in to GitHub, open **[Latest release](https://github.com/TheCodingKid82/asin-pulse/releases/latest)**, download **ASIN-Pulse.zip**, extract it, and double-click the included **ASIN-Pulse-Setup.cmd**. Use that download-and-run path for each update; unattended downloads require a public repository.
 

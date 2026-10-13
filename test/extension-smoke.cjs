@@ -17,7 +17,7 @@ const {chromium}=require('playwright'),assert=require('node:assert/strict'),fs=r
   await page.evaluate(async()=>{
    const source={title:'Browser test product',url:'https://www.carters.com/p/test/1',price:9,currency:'USD',brand:'Test',model:'123',gtins:['194135313606'],detailVerified:true};
    const candidate={...source,price:14.99,asin:'B012345678',url:'https://www.amazon.com/dp/B012345678',rank:'#12,345 in Toys & Games'};
-   const job={id:'browser-test',retailer:'Test',category:'Synthetic browser test',createdAt:new Date().toISOString(),status:'complete',phase:'done',nextIndex:1,visited:[],events:[],engineVersion:'2.2',leads:[{id:'a',source,candidates:[candidate],selected:0,status:'matched'}]};
+   const job={id:'browser-test',retailer:'Walmart',category:'Synthetic browser test',url:'https://www.walmart.com/browse/toys/4171/',limit:10,createdAt:new Date().toISOString(),status:'complete',phase:'done',nextIndex:1,visited:[],events:[],engineVersion:'2.2',leads:[{id:'a',source,candidates:[candidate],selected:0,status:'matched'}]};
    await chrome.storage.local.set({sourcingIndex:[{id:job.id,retailer:'Test',category:job.category,count:1}],['sourcingJob:'+job.id]:job});
   });
   await page.reload();await page.waitForFunction(()=>document.querySelectorAll('#results tr').length===1);
@@ -38,6 +38,7 @@ const {chromium}=require('playwright'),assert=require('node:assert/strict'),fs=r
   await page.goto(url+'update.html').catch(e=>{if(!/closed|interrupted|ERR_ABORTED/.test(e.message))throw e});
   const desk=await reopened;await desk.waitForURL(url+'sourcing.html?updated=1',{timeout:20000});await desk.waitForFunction(()=>document.getElementById('result-count').textContent==='1 shown');
   assert.equal(await desk.inputValue('#max-rank'),'15000');assert.match(await desk.locator('#app-status').textContent(),/updated/);assert.deepEqual(errors,[]);
+  assert.equal(await desk.inputValue('#retailer'),'walmart');assert.equal(await desk.inputValue('#limit'),'10');assert.equal(await desk.inputValue('#source-url'),'https://www.walmart.com/browse/toys/4171/');
   assert.equal(await desk.inputValue('[name="fba"]'),'3');assert.match(await desk.locator('#results').textContent(),/★ Review/);
   await desk.locator('#clear-filters').click();assert.equal(await desk.inputValue('#max-rank'),'');
   console.log('PASS: packaged extension loads; price/rank boundaries, cost calculation, review, favorites and CSV export work; runtime reload preserves scans, filters and settings and reopens the desk.');

@@ -51,3 +51,8 @@ test('Walmart selected product reads visible hero price, exact UPC and model, ne
  w.document.querySelector('[data-seo-id="hero-price"]').remove();assert.equal(w.SourcingPage.retail().products[0].price,null);
  w.close();
 });
+
+test('Kohl landing pages discover both catalog.jsp and catalog/category subcategories',()=>{
+ const w=page('walmart-category.html','https://www.kohls.com/catalog/toys.jsp?CN=Department:Toys');w.document.body.innerHTML='<main><h1>Toys</h1><a href="/catalog.jsp?CN=Assortment:Top%20Toys">Top Toys</a><a href="/catalog/lego.jsp">LEGO</a></main>';
+ const r=w.SourcingPage.retail();assert.equal(r.categoryLinks.length,2);assert.equal(r.department,true);w.close();
+});

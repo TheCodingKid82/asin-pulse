@@ -154,7 +154,7 @@
     const expectedTotal=totalMatch?Number(totalMatch[1].replace(/,/g,'')):null;
     const walmartCatalog=new Map((walmartData?.searchResult?.itemStacks||[]).flatMap(stack=>stack.items||[]).filter(p=>p.usItemId&&p.name).map(p=>[String(p.usItemId),p]));
     const products=[...out.values()].map(p=>{const entry=!isProduct&&host==='walmart.com'?walmartCatalog.get(new URL(p.url).pathname.split('/').filter(Boolean).at(-1)):null;return {...p,...(entry?{title:S.clean(entry.name),price:S.price(entry.priceInfo?.currentPrice?.price)??p.price}:{}),retailer:stores[host]||host,observedAt:new Date().toISOString()};});
-    const categoryPaths={'target.com':/^\/c\//,'walmart.com':/^\/browse\//,'kohls.com':/^\/catalog\//,'carters.com':/^\/c\//,'boscovs.com':/^\/(?:category|c)\//,'macys.com':/^\/shop\/(?!product)/,'jcpenney.com':/^\/g\//};
+    const categoryPaths={'target.com':/^\/c\//,'walmart.com':/^\/browse\//,'kohls.com':/^\/catalog(?:\/|\.jsp)/,'carters.com':/^\/c\//,'boscovs.com':/^\/(?:category|c)\//,'macys.com':/^\/shop\/(?!product)/,'jcpenney.com':/^\/g\//};
     const categoryLinks=[];
     if(!isProduct&&(host==='target.com'||!products.length)){
       const selectors=host==='target.com'?'a[data-lnk^="c_bubcat_"]':'main a[href], [role="main"] a[href], #page-content a[href]';
