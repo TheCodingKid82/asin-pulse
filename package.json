@@ -1,6 +1,6 @@
 {
   "name": "asin-pulse",
-  "version": "2.2.3",
+  "version": "2.2.4",
   "private": true,
   "scripts": {
     "test": "node --test test/*.test.cjs"

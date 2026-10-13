@@ -1,10 +1,10 @@
-# ASIN Pulse 2.2.3 verification
+# ASIN Pulse 2.2.4 verification
 
 Verified on October 13, 2026.
 
 ## Automated coverage
 
-The 28-test Node suite covers retailer URL validation, identity/variation conflicts, rank extraction, inclusive price/rank boundaries, unknown-value exclusion, price spread without invented fees, CSV import/export, scan checkpoints and resume, pagination/deduplication, Carter’s exact-size expansion, and sourcing-desk filtering/export/settings persistence.
+The 29-test Node suite covers retailer URL validation, identity/variation conflicts, rank extraction, inclusive price/rank boundaries, unknown-value exclusion, price spread without invented fees, CSV import/export, scan checkpoints and resume, pagination/deduplication, Carter’s exact-size expansion, and sourcing-desk filtering/export/settings persistence.
 
 Parser regressions include real page fragments from Carter’s, Target, and Boscov’s, plus focused Walmart fixtures reconstructed from observed current markup and product data. These are local replay tests, not assertions that future retailer pages will never change.
 
@@ -15,6 +15,7 @@ The release workflow loads the packaged extension in isolated Chromium to verify
 - Carter’s baby-gear category: 48 readable product cards, displayed total 391, Load More detected.
 - Carter’s Magic Wand: $9.00, Skip Hop, pink, model 9K176510, UPC 194135313606, in stock.
 - Carter’s sleep-bag style: four distinct size-specific SKUs and UPCs exposed and parsed.
+- Boscov’s default department exposed numeric category aliases such as `/c/6170016`, redirecting to `/category/building-sets-and-blocks`. The browser reader now accepts that same-store category redirect. Regression checks reject unrelated product and cross-host redirects.
 - Boscov’s toys category: 36 readable cards, displayed total 2,042, next-page button detected.
 - Boscov’s Mega Bloks Chomp Dinosaur: $21.99, UPC 194735379385, readable product data.
 - Amazon search for that UPC in Zen: matching product result B0G43TKPJW displayed at $14.98. This is not a lower-retail-price opportunity.

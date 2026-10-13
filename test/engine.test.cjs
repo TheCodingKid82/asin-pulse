@@ -30,3 +30,17 @@ test('reordered search title is inspected before rejecting an exact UPC product'
  const job=E.newJob({url:item.url,products:[item]});await new E.Runner({reader,save:async()=>{}}).run(job);
  assert.equal(job.leads[0].candidates[0].asin,candidate.asin);assert.equal(job.leads[0].candidates[0].match.level,'identifier');
 });
+
+test('browser reader follows Boscov numeric category aliases while rejecting unrelated product and host redirects',async()=>{
+ const vm=require('node:vm'),fs=require('node:fs'),path=require('node:path');
+ async function read(requested,actual){
+  let clock=0;const page={url:actual,products:[{title:'LEGO Aircraft',url:'https://www.boscovs.com/product/lego/871052',price:14.99}]};
+  const context={Sourcing:global.Sourcing,URL,Date:{now:()=>clock},setTimeout:(fn,ms)=>{clock+=ms;queueMicrotask(fn)},chrome:{tabs:{create:async()=>({id:1}),get:async()=>({url:actual}),update:async()=>({id:1})},scripting:{executeScript:async options=>options.files?[]:[{result:page}]}}};
+  vm.createContext(context);vm.runInContext(fs.readFileSync(path.join(__dirname,'../sourcing-engine.js'),'utf8'),context);
+  return new context.SourcingEngine.BrowserReader().open(requested,'retail');
+ }
+ const alias='https://www.boscovs.com/c/6170016',canonical='https://www.boscovs.com/category/building-sets-and-blocks';
+ assert.equal((await read(alias,canonical)).products[0].price,14.99);
+ await assert.rejects(read('https://www.boscovs.com/product/lego/1','https://www.boscovs.com/product/lego/2'),error=>error.code==='read');
+ await assert.rejects(read(alias,'https://www.target.com/category/building-sets-and-blocks'),error=>error.code==='read');
+});

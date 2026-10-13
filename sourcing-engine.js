@@ -29,7 +29,8 @@
         try{
           await this.inject();const next=await this.script(kind);
           const actual=next?.url?new URL(next.documentUrl||next.url):null,requested=new URL(url);
-          if(!actual||actual.hostname.replace(/^www\./,'')!==requested.hostname.replace(/^www\./,'')||actual.pathname!==requested.pathname||kind==='amazonSearch'&&actual.searchParams.get('k')!==requested.searchParams.get('k'))continue;
+          const categoryAlias=kind==='retail'&&requested.hostname.replace(/^www\./,'')==='boscovs.com'&&/^\/c\/\d+\/?$/.test(requested.pathname)&&/^\/category\/[^/]+\/?$/.test(actual?.pathname||'');
+          if(!actual||actual.hostname.replace(/^www\./,'')!==requested.hostname.replace(/^www\./,'')||actual.pathname!==requested.pathname&&!categoryAlias||kind==='amazonSearch'&&actual.searchParams.get('k')!==requested.searchParams.get('k'))continue;
           if(next.blocked)throw new ScanError('A page check is required. Open the scan tab, then resume.','blocked');
           result=next;
           if(kind==='retail'&&next.isProduct&&await this.script('prepareDetails')){stable=0;continue;}
