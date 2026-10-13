@@ -1,0 +1,58 @@
+{
+  "manifest_version": 3,
+  "name": "ASIN Pulse — Sales & Sourcing",
+  "version": "2.1.0",
+  "description": "Scan retail categories, find Amazon product matches, compare sourcing costs and estimated profit, and view monthly purchase signals.",
+  "minimum_chrome_version": "114",
+  "permissions": [
+    "storage",
+    "scripting",
+    "activeTab",
+    "unlimitedStorage"
+  ],
+  "host_permissions": [
+    "https://www.amazon.com/*",
+    "https://www.amazon.ca/*",
+    "https://www.amazon.co.uk/*"
+  ],
+  "optional_host_permissions": [
+    "https://api.keepa.com/*",
+    "https://www.target.com/*",
+    "https://www.walmart.com/*",
+    "https://www.kohls.com/*",
+    "https://www.macys.com/*",
+    "https://www.jcpenney.com/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "ASIN Pulse — Sales & Sourcing"
+  },
+  "options_page": "options.html",
+  "icons": {
+    "16": "icons/16.png",
+    "48": "icons/48.png",
+    "128": "icons/128.png"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://www.amazon.com/*",
+        "https://www.amazon.ca/*",
+        "https://www.amazon.co.uk/*"
+      ],
+      "js": [
+        "core.js",
+        "scanner.js",
+        "ui.js",
+        "content.js"
+      ],
+      "run_at": "document_idle"
+    }
+  ],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'none'"
+  }
+}
