@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "ASIN Pulse \u2014 Sales & Sourcing",
-  "version": "2.2.1",
+  "version": "2.2.2",
   "description": "Scan retail categories, find Amazon product matches, compare sourcing costs and estimated profit, and view monthly purchase signals.",
   "minimum_chrome_version": "114",
   "permissions": [

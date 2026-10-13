@@ -34,7 +34,7 @@
   }
   const cardSelectors={
     'target.com':'[data-test="@web/site-top-of-funnel/ProductCardWrapper"], [data-test="product-card"], [data-test="product-card-default"], [data-test="product-card-container"]',
-    'walmart.com':'[data-item-id], [data-testid="item-stack"]',
+    'walmart.com':'[data-item-id]',
     'kohls.com':'.products_grid .products_grid-item, .prod_grid_block, .product-tile, [data-testid="product-tile"]',
     'macys.com':'li.product-thumbnail, .productThumbnail, [data-testid="product-thumbnail"], .product-thumbnail',
     'carters.com':'.product-tile-link-container',
@@ -51,8 +51,10 @@
     const url=S.safeUrl(a?.getAttribute('href'),location.href);if(!url||new URL(url).hostname.replace(/^www\./,'')!==host)return null;
     const title=text(el.querySelector('[data-automation-id="product-title"], [data-test="product-title"], [data-test="product-title-link"], [data-testid="product-title"], .prod_nameBlock, .productDescription, .product-title, .product-tile-name, .mz-productlisting-title, h3, h2'))||S.clean(a?.getAttribute('aria-label'))||S.clean(a?.querySelector('img')?.alt)||text(a);
     if(!title||title.length<5||/^(?:trending searches|recommended for you|recently viewed)$/i.test(title))return null;
-    const priceEl=el.querySelector('[data-automation-id="product-price"], [data-test="current-price"], [data-test="product-price"], [data-testid="product-price"], .prod_price_amount, .price .discount, .discount, .sale-price, .current-price, .product-tile-price p:first-child, .mz-pricestack.actual-price [itemprop="price"], [itemprop="price"]');
+    const priceEl=el.querySelector('[data-testid="unified-global-product-price-a11y-text"], [data-automation-id="unified-global-product-price-a11y-text"], [data-automation-id="product-price"], [data-test="current-price"], [data-test="product-price"], [data-testid="product-price"], .prod_price_amount, .price .discount, .discount, .sale-price, .current-price, .product-tile-price p:first-child, .mz-pricestack.actual-price [itemprop="price"], [itemprop="price"]');
     let value=priceEl?.getAttribute('content')||text(priceEl);
+    // Walmart appends prices for other variants/conditions after the selected price.
+    if(host==='walmart.com'&&priceEl?.matches('[data-testid="unified-global-product-price-a11y-text"], [data-automation-id="unified-global-product-price-a11y-text"]'))value=value.split(/\bOptions from\b/i)[0];
     if(!value){const parts=(el.innerText||el.textContent||'').split('\n').map(S.clean);value=parts.find(t=>/^(?:Now\s+|Sale\s+|current price\s+)?\$\d/.test(t)&&!/(?:\/mo|\bwas\b|\borig\b|reg\.)/i.test(t))||'';}
     const img=el.querySelector('img');const attrs={};for(const k of ['data-upc','data-gtin','data-ean'])if(el.getAttribute(k))attrs[k]=el.getAttribute(k);
     return {title:title.slice(0,500),url,price:S.price(value),currency:stores[host]?'USD':null,brand:'',model:'',gtins:Object.values(attrs).filter(S.gtin),image:S.safeUrl(img?.currentSrc||img?.src,location.href),availability:/out of stock|sold out/i.test(text(el))?'out':'unknown',origin:'Retail category card'};
@@ -69,6 +71,8 @@
     const out=new Map();const isProduct=productPath[host]?.test(location.pathname);
     const list=structured().map(ldProduct).filter(Boolean);
     const headline=text(document.querySelector('h1'));
+    let walmartData=null;
+    if(host==='walmart.com'){try{walmartData=JSON.parse(document.querySelector('#__NEXT_DATA__')?.textContent||'null')?.props?.pageProps?.initialData;}catch{}}
     const variantProducts=isProduct&&host==='carters.com'?list.filter(p=>new URL(p.url).pathname.split('/').slice(0,-1).join('/')===location.pathname.split('/').slice(0,-1).join('/')&&new URL(p.url).pathname!==location.pathname):[];
     for(const p of list)if(p.title&&(isProduct||p.url!==location.href)){
       if(isProduct&&new URL(p.url).pathname!==location.pathname)continue;
@@ -91,6 +95,17 @@
         const fulfillment=[...document.querySelectorAll('[data-test="shippingButton"], [data-test="orderPickupButton"], [data-test="shipItButton"]')];
         if(fulfillment.some(e=>seenVisible(e)&&!e.disabled&&e.getAttribute('aria-disabled')!=='true'))p.availability='in';
         out.clear();out.set(p.url,p);
+      }
+    }
+    if(isProduct&&host==='walmart.com'){
+      const data=walmartData?.data?.product;
+      const itemId=location.pathname.split('/').filter(Boolean).at(-1);
+      const hero=document.querySelector('[data-seo-id="hero-price"][itemprop="price"]');
+      if(data&&String(data.usItemId)===itemId&&headline){
+        const selected=(data.variantCriteria||[]).map(v=>({name:v.name||v.id,value:(v.variantList||[]).find(x=>x.selected||x.isSelected)?.name}));
+        const variant=name=>selected.find(v=>new RegExp(name,'i').test(v.name||''))?.value||'';
+        const product={title:headline,url:location.href,price:seenVisible(hero)?S.price(text(hero)):null,currency:'USD',brand:S.clean(data.brand),model:S.clean(data.model),gtins:[data.upc].filter(S.gtin),color:variant('colo[u]?r'),size:variant('size'),variantUnresolved:selected.some(v=>!v.value),availability:/^IN_STOCK$/i.test(data.availabilityStatus||'')?'in':/OUT_OF_STOCK/i.test(data.availabilityStatus||'')?'out':'unknown',condition:/^new$/i.test(data.conditionType||'')?'new':'unknown',origin:'Retailer selected product data'};
+        out.clear();out.set(product.url,product);
       }
     }
     if(isProduct&&host==='carters.com'){
@@ -123,7 +138,7 @@
         }
       }catch{}
     }
-    if(!isProduct)for(const el of document.querySelectorAll(cardSelectors[host]||'[itemtype$="/Product"]')){if(!seenVisible(el))continue;const p=cardProduct(el);if(p&&!out.has(p.url))out.set(p.url,p);}
+    if(!isProduct)for(const el of document.querySelectorAll(cardSelectors[host]||'[itemtype$="/Product"]')){if(!seenVisible(el))continue;const p=cardProduct(el);if(p){const existing=out.get(p.url);if(!existing)out.set(p.url,p);else if(host==='walmart.com')out.set(p.url,{...existing,title:p.title,price:p.price??existing.price});}}
     // A retailer may change wrapper names. Product links still identify cards; never use a whole category's text as one product.
     if(!isProduct&&out.size===0&&productPath[host]){
       for(const a of document.querySelectorAll('main a[href], [role="main"] a[href], #page-content a[href]')){
@@ -137,7 +152,8 @@
     const pageText=text(document.querySelector('main,[role="main"],#page-content')||document.body).slice(0,25000);
     const totalMatch=pageText.match(/\b(?:of|out of)\s+([\d,]+)\s+(?:results|items|products)\b/i)||pageText.match(/\b([\d,]+)\s+(?:results|items|products)\b/i);
     const expectedTotal=totalMatch?Number(totalMatch[1].replace(/,/g,'')):null;
-    const products=[...out.values()].map(p=>({...p,retailer:stores[host]||host,observedAt:new Date().toISOString()}));
+    const walmartCatalog=new Map((walmartData?.searchResult?.itemStacks||[]).flatMap(stack=>stack.items||[]).filter(p=>p.usItemId&&p.name).map(p=>[String(p.usItemId),p]));
+    const products=[...out.values()].map(p=>{const entry=!isProduct&&host==='walmart.com'?walmartCatalog.get(new URL(p.url).pathname.split('/').filter(Boolean).at(-1)):null;return {...p,...(entry?{title:S.clean(entry.name),price:S.price(entry.priceInfo?.currentPrice?.price)??p.price}:{}),retailer:stores[host]||host,observedAt:new Date().toISOString()};});
     const categoryPaths={'target.com':/^\/c\//,'walmart.com':/^\/browse\//,'kohls.com':/^\/catalog\//,'carters.com':/^\/c\//,'boscovs.com':/^\/(?:category|c)\//,'macys.com':/^\/shop\/(?!product)/,'jcpenney.com':/^\/g\//};
     const categoryLinks=[];
     if(!isProduct&&(host==='target.com'||!products.length)){

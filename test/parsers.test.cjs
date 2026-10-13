@@ -39,3 +39,15 @@ test('press and hold in a toy description is not a CAPTCHA',()=>{
  assert.equal(w.SourcingPage.amazonProduct().blocked,false);
  w.document.title='Robot or human?';w.document.body.innerHTML='<h1>Press and hold</h1>Verify you are human';assert.equal(w.SourcingPage.amazonProduct().blocked,true);w.close();
 });
+
+test('Walmart cards use clean visible titles and current prices without treating an entire item stack as one product',()=>{
+ const w=page('walmart-category.html','https://www.walmart.com/browse/toys/4171/'),r=w.SourcingPage.retail();
+ assert.equal(r.products.length,2);assert.equal(r.products[0].title,'Apple AirPods 4');assert.equal(r.products[0].price,99);assert.equal(r.products[1].price,19.97);w.close();
+});
+
+test('Walmart selected product reads visible hero price, exact UPC and model, never recommendation prices',()=>{
+ const w=page('walmart-product.html','https://www.walmart.com/ip/Apple-AirPods-4/11381374703'),p=w.SourcingPage.retail().products[0];
+ assert.equal(p.title,'Apple AirPods 4');assert.equal(p.price,99);assert.equal(p.gtins[0],'195949688522');assert.equal(p.model,'MXP63LL/A');assert.equal(p.availability,'in');
+ w.document.querySelector('[data-seo-id="hero-price"]').remove();assert.equal(w.SourcingPage.retail().products[0].price,null);
+ w.close();
+});
