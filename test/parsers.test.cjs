@@ -10,6 +10,10 @@ test('live Carter category markup yields sale prices and Load More, without MSRP
  const w=page('carters-category.html','https://www.carters.com/c/baby-gear'),r=w.SourcingPage.retail();
  assert.equal(r.products.length,2);assert.equal(r.products[0].price,9);assert.equal(r.products[1].price,38);assert.equal(r.expectedTotal,391);assert.equal(r.loadMore,true);w.close();
 });
+test('current Target price module reads sale price and exact UPC, not MSRP or recommendations',()=>{
+ const w=page('target-product.html','https://www.target.com/p/power-charge-spider-man/-/A-94855993'),r=w.SourcingPage.retail();
+ assert.equal(r.products.length,1);assert.equal(r.products[0].price,33.99);assert.deepEqual([...r.products[0].gtins],['195166348551']);assert.equal(r.products[0].availability,'in');w.close();
+});
 test('live Carter product has exact UPC, model and color',()=>{
  const w=page('carters-product.html','https://www.carters.com/p/magic-wand/V_9K176510'),r=w.SourcingPage.retail(),p=r.products[0];
  assert.equal(p.price,9);assert.equal(p.brand,'Skip Hop');assert.equal(p.model,'9K176510');assert.deepEqual([...p.gtins],['194135313606']);assert.equal(p.color,'Pink');assert.equal(p.availability,'in');w.close();

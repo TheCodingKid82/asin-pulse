@@ -1,1 +1,12 @@
-{"name":"asin-pulse","version":"2.2.0","private":true,"scripts":{"test":"node --test test/*.test.cjs"},"devDependencies":{"jsdom":"^26.1.0","playwright":"1.56.1"}}
+{
+  "name": "asin-pulse",
+  "version": "2.2.1",
+  "private": true,
+  "scripts": {
+    "test": "node --test test/*.test.cjs"
+  },
+  "devDependencies": {
+    "jsdom": "^26.1.0",
+    "playwright": "1.56.1"
+  }
+}

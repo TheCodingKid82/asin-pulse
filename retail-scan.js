@@ -70,7 +70,7 @@
     // Target sometimes renders no Product JSON-LD. Read only the main product's
     // price and specification fields, never recommendations or an arbitrary dollar amount.
     if(isProduct&&host==='target.com'&&headline){
-      const priceEl=[...document.querySelectorAll('[data-test="product-price"], [data-test="productPrice"]')].find(e=>seenVisible(e)&&!e.closest(cardSelectors[host]));
+      const priceEl=[...document.querySelectorAll('[data-test="product-price"], [data-test="productPrice"], [data-test="module-product-detail-price-v2"] [data-test="price-cdui-row"]')].find(e=>seenVisible(e)&&!e.closest(cardSelectors[host]));
       const visiblePrice=S.price(text(priceEl));
       const specifications=[...document.querySelectorAll('[data-test*="specification" i], [data-test="item-details-specifications"], [id*="Specifications"]')].map(text).join(' ');
       const codes=[...new Set([...specifications.matchAll(/\b(?:UPC|GTIN|EAN)\s*:\s*(\d{8,14})\b/gi)].map(m=>m[1]).filter(S.gtin))];

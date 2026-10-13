@@ -54,8 +54,8 @@ Edit the source, then commit and push to `main`. GitHub Actions:
 
 1. Runs the parser, matching, filter, and scan-engine tests.
 2. Builds the install package.
-3. Loads the packaged extension in Chromium and tests update/reload persistence.
-4. Tests a fresh Windows install and a second update.
+3. Loads the packaged extension in Chromium and tests price/rank filters, costs, review, CSV export, and update/reload persistence.
+4. Tests a fresh Windows install, a second update, desktop shortcuts, and the installed extension in Windows Chromium, including a path with spaces and Unicode.
 5. Publishes a new release only if all checks pass.
 
 The **Latest release** and **Setup.cmd** links above always point to the latest successful build. The release includes its source revision, so Jeffrey can report exactly which version he is using. For user-facing version changes, bump `manifest.json` and `package.json` together.

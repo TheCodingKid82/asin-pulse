@@ -4,7 +4,7 @@ Verified on October 13, 2026.
 
 ## Automated coverage
 
-The 21-test Node suite covers retailer URL validation, identity/variation conflicts, rank extraction, inclusive price/rank boundaries, unknown-value exclusion, price spread without invented fees, CSV import/export, scan checkpoints and resume, pagination/deduplication, Carter’s exact-size expansion, and sourcing-desk filtering/export/settings persistence.
+The 23-test Node suite covers retailer URL validation, identity/variation conflicts, rank extraction, inclusive price/rank boundaries, unknown-value exclusion, price spread without invented fees, CSV import/export, scan checkpoints and resume, pagination/deduplication, Carter’s exact-size expansion, and sourcing-desk filtering/export/settings persistence.
 
 Parser regressions include real page fragments from Carter’s and Boscov’s. These are local replay tests, not assertions that future retailer pages will never change.
 

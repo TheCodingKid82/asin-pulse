@@ -33,8 +33,14 @@ jobs:
   windows-installer:
     needs: test
     runs-on: windows-latest
-    timeout-minutes: 5
+    timeout-minutes: 10
     steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci --ignore-scripts
       - uses: actions/download-artifact@v4
         with:
           name: release
@@ -42,8 +48,8 @@ jobs:
       - name: Exercise the actual Windows installer
         shell: pwsh
         run: |
-          $env:LOCALAPPDATA = Join-Path $env:RUNNER_TEMP 'asin-pulse-installer-test'
-          $env:ASIN_PULSE_SETUP_TEST = '1'
+          $env:LOCALAPPDATA = Join-Path $env:RUNNER_TEMP "ASIN Pulse test – O'Brien"
+          $env:ASIN_PULSE_SETUP_NO_LAUNCH = '1'
           Expand-Archive artifacts/ASIN-Pulse.zip package
           cmd /c package\ASIN-Pulse-Setup.cmd
           if ($LASTEXITCODE -ne 0) { throw 'Installer failed' }
@@ -53,6 +59,21 @@ jobs:
           cmd /c package\ASIN-Pulse-Setup.cmd
           if ($LASTEXITCODE -ne 0) { throw 'Update failed' }
           if (!(Test-Path (Join-Path $env:LOCALAPPDATA 'ASINPulse/extension-backup/manifest.json'))) { throw 'No rollback copy' }
+          $shell = New-Object -ComObject WScript.Shell
+          $desktop = [Environment]::GetFolderPath('Desktop')
+          $open = $shell.CreateShortcut((Join-Path $desktop 'ASIN Pulse.lnk'))
+          $update = $shell.CreateShortcut((Join-Path $desktop 'Update ASIN Pulse.lnk'))
+          if (!(Test-Path $open.TargetPath)) { throw 'Chrome shortcut target missing' }
+          if ($open.Arguments -ne '--app=chrome-extension://ehkddogepoedojmgkldikiemlcdnmkna/sourcing.html') { throw 'Wrong app shortcut' }
+          if ($update.TargetPath -ne (Join-Path $env:LOCALAPPDATA 'ASINPulse/ASIN-Pulse-Setup.cmd')) { throw 'Wrong update shortcut' }
+          if (!(Test-Path $update.TargetPath)) { throw 'Updater shortcut target missing' }
+      - name: Test installed extension in real Windows Chromium
+        shell: pwsh
+        run: |
+          npx playwright install chromium
+          if ($LASTEXITCODE -ne 0) { throw 'Browser installation failed' }
+          node test/extension-smoke.cjs (Join-Path $env:RUNNER_TEMP "ASIN Pulse test – O'Brien/ASINPulse/extension")
+          if ($LASTEXITCODE -ne 0) { throw 'Windows extension test failed' }
   publish:
     needs: windows-installer
     runs-on: ubuntu-latest

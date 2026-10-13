@@ -119,7 +119,13 @@
     if(rows.length>500)errors.push('Only the first 500 rows were imported.');return {products,errors};
   }
   function csvExport(rows){return '\uFEFF'+rows.map(row=>row.map(value=>{let s=String(value??'');if(/^[=+\-@\t\r\n]/.test(s))s="'"+s;return '"'+s.replace(/"/g,'""')+'"';}).join(',')).join('\r\n');}
-  function searchQueries(p){const id=identity(p);return [...new Set([id.brand&&id.model?`${id.brand} ${id.model}`:'',...(p.gtins||[]).filter(gtin).map(v=>String(v).replace(/[\s-]/g,'')),clean(p.title).split(' ').slice(0,15).join(' ')].filter(Boolean))].slice(0,3);}
+  function searchQueries(p){
+    const id=identity(p),title=clean(p.title).split(' ').slice(0,15).join(' ');
+    // Retail titles can be as short as "Magic Wand". Keep the known brand in
+    // the fallback search rather than replacing it with a generic toy query.
+    const brandedTitle=id.brand&&!norm(title).includes(norm(id.brand))?`${id.brand} ${title}`:title;
+    return [...new Set([id.brand&&id.model?`${id.brand} ${id.model}`:'',...(p.gtins||[]).filter(gtin).map(v=>String(v).replace(/[\s-]/g,'')),brandedTitle].filter(Boolean))].slice(0,3);
+  }
   function salesRank(value){
     if(value && typeof value==='object' && Number.isSafeInteger(value.value)&&value.value>0)return {value:value.value,category:clean(value.category),text:clean(value.text)};
     const raw=clean(value),m=raw.match(/#\s*([\d,]+)\s+in\s+(.+?)(?=\s*\(|\s*#|$)/i);

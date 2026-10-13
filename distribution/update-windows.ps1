@@ -73,7 +73,7 @@ try {
   $safeFolder = [Net.WebUtility]::HtmlEncode($destination)
   $guide.Replace('__INSTALL_FOLDER__', $safeFolder) | Set-Content -LiteralPath $guidePath -Encoding UTF8
   Write-Host "Installed $($manifest.version_name)" -ForegroundColor Green
-  if ($env:ASIN_PULSE_SETUP_TEST -eq '1') { Write-Host 'Installer test completed.'; exit 0 }
+  if ($env:ASIN_PULSE_SETUP_TEST -eq '1' -or $env:ASIN_PULSE_SETUP_NO_LAUNCH -eq '1') { Write-Host 'Installer test completed.'; exit 0 }
   if ($firstInstall) {
     Write-Host 'Chrome will open the one-time setup guide. Choose Load unpacked and select:'
     Write-Host $destination -ForegroundColor Cyan

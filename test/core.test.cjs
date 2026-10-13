@@ -2,6 +2,10 @@ const test=require('node:test'),assert=require('node:assert/strict'),S=require('
 const product={title:'Skip Hop Magic Wand',brand:'Skip Hop',model:'9K176510',gtins:['194135313606'],price:9,currency:'USD',color:'Pink',detailVerified:true};
 const target={...product,price:14.99,asin:'B08MAGIC01',rank:'#12,345 in Toys & Games (See Top 100 in Toys & Games) #35 in Magic Kits'};
 const lead=()=>({source:{...product},candidates:[{...target,match:S.match(product,target)}],selected:0});
+test('short retail titles retain their brand in the fallback search',()=>{
+ assert.deepEqual(S.searchQueries({...product,title:'Magic Wand'}),['Skip Hop 9K176510','194135313606','Skip Hop Magic Wand']);
+ assert.equal(S.searchQueries({...product,title:'Skip Hop Magic Wand'}).at(-1),'Skip Hop Magic Wand');
+});
 test('all requested retailer URLs accepted, unrelated/private URLs rejected',()=>{
  for(const h of ['walmart.com','target.com','kohls.com','carters.com','boscovs.com'])assert.equal(new URL(S.retailUrl(`https://${h}/p/a`)).hostname,`www.${h}`);
  for(const u of ['https://boscovs.com.evil.test/a','http://carters.com/p/a','https://localhost/a','https://user:pass@carters.com/p/a'])assert.equal(S.retailUrl(u),null);

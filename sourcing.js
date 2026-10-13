@@ -29,8 +29,11 @@ async function requestAccess(urls){const origins=permissionOrigins(urls);const o
 function setRunning(value){running=value;$('scan-inputs').disabled=value;$('recent-scans').disabled=value;$('import-button').disabled=value;$('pause').hidden=!value;$('resume').hidden=value||!job||!['ready','paused'].includes(job.status);$('match-collected').hidden=value||!job||job.phase!=='discover'||!job.leads.length;}
 async function run(){
   if(running||!job)return;pauseRequested=false;setRunning(true);
+  notice('');
+  if(reader&&reader.jobId!==job.id){await reader.close();reader=null;}
   if(reader?.tabId){try{await chrome.tabs.get(reader.tabId);reader.reuseCurrent=true;}catch{reader=null;}}
   if(!reader)reader=new E.BrowserReader({shouldStop:()=>pauseRequested,onTab:id=>{$('open-scan-tab').hidden=id===null;}});
+  if(reader.jobId!==job.id){reader.jobId=job.id;if(job.metrics)reader.metrics=structuredClone(job.metrics);}
   try{
     await navigator.locks.request('asin-pulse-category-scan',{ifAvailable:true},async lock=>{
       if(!lock){notice('Another sourcing desk is already scanning. Pause it before starting here.');return;}
