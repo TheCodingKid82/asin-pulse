@@ -51,9 +51,13 @@ chrome.runtime.onMessage.addListener((message,sender,reply)=>{
 
 // The desktop updater opens update.html after replacing the local package.
 // Reopen the desk once the new service worker starts; no Chrome profile data is removed.
-ready.then(async()=>{
+async function reopenUpdatedDesk(){
+  await ready;
   const {reopenAfterUpdate}=await chrome.storage.local.get('reopenAfterUpdate');
   if(!reopenAfterUpdate)return;
   await chrome.storage.local.remove('reopenAfterUpdate');
   if(Date.now()-reopenAfterUpdate<300000)await chrome.tabs.create({url:chrome.runtime.getURL('sourcing.html?updated=1')});
-});
+}
+// Register lifecycle listeners so Chrome starts the worker after runtime.reload().
+chrome.runtime.onInstalled.addListener(()=>{void reopenUpdatedDesk();});
+chrome.runtime.onStartup.addListener(()=>{void reopenUpdatedDesk();});
