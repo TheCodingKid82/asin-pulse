@@ -42,9 +42,9 @@
       return `${value}:${unit}`;
     });
     const explicit=clean(p.color).toLowerCase();
-    const rawSize=norm(p.size||title.match(/\bsize\s+(\d+(?:\.\d+)?|[2-5]?x[sl]|xx[sl]|small|medium|large|[sml])\b/i)?.[1]||'');
+    const rawSize=norm(String(p.size||title.match(/\bsize\s+(\d+(?:\.\d+)?|[2-5]?x[sl]|xx[sl]|small|medium|large|[sml])\b/i)?.[1]||'').replace(/\bmonths?\b/gi,'m').replace(/\byears?\b/gi,'y'));
     const size=({small:'s',medium:'m',large:'l',xsmall:'xs',xlarge:'xl',xxsmall:'xxs',xxlarge:'xxl','2xl':'xxl','2xs':'xxs','3xl':'xxxl'})[rawSize]||rawSize;
-    return {pack,sizes:[...new Set(sizes)].sort(),size:size||null,color:explicit?norm(explicit):null};
+    return {pack,sizes:[...new Set(sizes)].sort(),size:size||null,color:explicit?norm(explicit.replace(/\bgray\b/g,'grey')):null};
   }
   function match(source,target){
     const si=identity(source),ti=identity(target);

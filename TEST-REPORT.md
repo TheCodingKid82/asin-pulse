@@ -4,7 +4,7 @@ Verified on October 13, 2026.
 
 ## Automated coverage
 
-The Node test suite covers retailer URL validation, identity/variation conflicts, rank extraction, inclusive price/rank boundaries, unknown-value exclusion, price spread without invented fees, CSV import/export, scan checkpoints and resume, pagination/deduplication, Carter’s exact-size expansion, and sourcing-desk filtering/export/settings persistence.
+The 21-test Node suite covers retailer URL validation, identity/variation conflicts, rank extraction, inclusive price/rank boundaries, unknown-value exclusion, price spread without invented fees, CSV import/export, scan checkpoints and resume, pagination/deduplication, Carter’s exact-size expansion, and sourcing-desk filtering/export/settings persistence.
 
 Parser regressions include real page fragments from Carter’s and Boscov’s. These are local replay tests, not assertions that future retailer pages will never change.
 
@@ -19,6 +19,8 @@ The release workflow also runs the packaged Windows installer twice: a fresh ins
 - Boscov’s Mega Bloks Chomp Dinosaur: $21.99, UPC 194735379385, readable product data.
 - Amazon search for that UPC in Zen: matching product result B0G43TKPJW displayed at $14.98. This is not a lower-retail-price opportunity.
 - The separate automated test browser received Amazon’s “Sorry! Something went wrong!” response. The scanner treats this as a blocked/interrupted read rather than a completed search with no match.
+
+- The separate test browser received Kohl’s “Access Denied” response for its toys category; this is not a successful Kohl’s scan.
 
 ## Remaining boundaries
 

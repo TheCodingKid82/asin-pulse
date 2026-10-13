@@ -26,7 +26,7 @@ On a Mac, download and extract ASIN-Pulse.zip, then load its `extension` folder 
 ## Find products
 
 1. Choose a retailer and category, or paste a category/product URL.
-2. Choose a quick check or the whole-category option, then **Start scan**. Allow access to that retailer when Chrome asks.
+2. Choose a quick check or the whole-category option (clothing styles may expand into separate size variants), then **Start scan**. Allow access to that retailer when Chrome asks.
 3. Keep the sourcing desk and scan tab open. If a website asks for a check, the scan pauses. Complete the check yourself and choose **Resume scan**.
 4. Set **Result type → Retail price is lower**.
 5. Set a retail or Amazon price range, minimum dollar difference, and/or Amazon sales-rank range. Lower BSR is better **within the same category**; use the rank-category field when needed. Products with unknown ranks are excluded from rank-filtered results.

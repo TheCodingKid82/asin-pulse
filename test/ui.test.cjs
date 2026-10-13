@@ -14,5 +14,5 @@ test('sourcing desk loads saved work, filters price/rank, exports matching CSV, 
  change('filter-kind','cheaper');assert.equal($('results').children.length,1);assert.match($('results').textContent,/#12,345/);$('export').click();assert(download);assert(!(await download.text()).includes('Dinosaur'));assert((await download.text()).includes('Magic Wand'));
  change('max-rank','10000');assert.equal($('results').children.length,0);change('max-rank','15000');assert.equal($('results').children.length,1);
  change('min-price','10');assert.equal($('results').children.length,0);change('min-price','9');assert.equal($('results').children.length,1);
- assert.equal(data.sourcingFilters['min-price'],'9');assert.equal(data.sourcingFilters['max-rank'],'15000');assert.match(w.document.querySelector('footer').textContent,/2.2.0 \(test\)/);d.window.close();
+ assert.equal(data.sourcingFilters['min-price'],'9');assert.equal(data.sourcingFilters['max-rank'],'15000');assert.match(w.document.querySelector('footer').textContent,/2.2.0 \(test\)/);$('clear-filters').click();await new Promise(setImmediate);assert.equal($('results').children.length,2);d.window.close();
 });

@@ -7,7 +7,7 @@ permissions:
   contents: read
 concurrency:
   group: asin-pulse-release
-  cancel-in-progress: false
+  cancel-in-progress: true
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -62,5 +62,10 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          CURRENT=$(gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/main" --jq '.object.sha')
+          if [ "$CURRENT" != "$GITHUB_SHA" ]; then
+            echo "A newer update is being tested; this older build will not replace Latest."
+            exit 0
+          fi
           VERSION=$(node -p "require('./manifest.json').version")
           gh release create "build-${GITHUB_RUN_NUMBER}" artifacts/ASIN-Pulse.zip artifacts/ASIN-Pulse.zip.sha256 artifacts/ASIN-Pulse-Setup.cmd --target "$GITHUB_SHA" --title "ASIN Pulse ${VERSION} — build ${GITHUB_RUN_NUMBER}" --notes "Latest tested build. New users: download ASIN-Pulse-Setup.cmd and run it. Existing users: double-click Update ASIN Pulse on your desktop. Finish or pause a scan before updating. If this repository is private, download ASIN-Pulse.zip while signed in, extract it, and run the included setup." --latest

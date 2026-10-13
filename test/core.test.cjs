@@ -35,3 +35,5 @@ test('lower retail price is available without invented FBA fees',()=>{
 test('CSV imports both new retailers and exports formula-safe cells',()=>{
  const r=S.importCsv('title,url,price,currency,upc\nMagic Wand,https://carters.com/p/magic-wand/1,9,USD,194135313606\nDinosaur,https://boscovs.com/product/dino/2,21.99,USD,194735379385');assert.equal(r.products.length,2);assert.equal(r.errors.length,0);assert.match(S.csvExport([['=HYPERLINK("bad")']]),/\'=HYPERLINK/);
 });
+
+test('equivalent baby-size and gray/grey spellings match',()=>{assert.equal(S.match({...product,size:'0-3M',color:'Grey'},{...target,size:'0-3 Months',color:'Gray'}).level,'identifier');});
