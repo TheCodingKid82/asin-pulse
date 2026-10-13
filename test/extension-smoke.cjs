@@ -12,7 +12,7 @@ const {chromium}=require('playwright'),assert=require('node:assert/strict'),fs=r
   if(!await developerMode.evaluate(el=>el.checked))await developerMode.click();
   await manager.close();
   const url=`chrome-extension://${config.extensionId}/`,page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));await page.goto(url+'sourcing.html');await page.waitForFunction(()=>document.getElementById('retailer').options.length===7);
-  const manifest=await page.evaluate(()=>chrome.runtime.getManifest());assert.equal(manifest.version,'2.2.0');
+  const manifest=await page.evaluate(()=>chrome.runtime.getManifest());assert.equal(manifest.version,JSON.parse(fs.readFileSync(path.join(__dirname,'../manifest.json'),'utf8')).version);
   await page.evaluate(async()=>{
    const source={title:'Browser test product',url:'https://www.carters.com/p/test/1',price:9,currency:'USD',brand:'Test',model:'123',gtins:['194135313606'],detailVerified:true};
    const candidate={...source,price:14.99,asin:'B012345678',url:'https://www.amazon.com/dp/B012345678',rank:'#12,345 in Toys & Games'};
