@@ -5,7 +5,15 @@
   const host=location.hostname.replace(/^www\./,'');
   const seenVisible=el=>!!el&&el.getClientRects().length>0&&getComputedStyle(el).display!=='none'&&getComputedStyle(el).visibility!=='hidden'&&!el.closest('[hidden]');
   const text=el=>S.clean(el?.innerText??el?.textContent);
-  function blocked(){if([...document.querySelectorAll('iframe#px-captcha-modal, #px-captcha, iframe[title*="challenge" i]')].some(seenVisible))return true;const t=S.clean(document.title+' '+document.body?.innerText?.slice(0,4500));return /robot or human|verify (?:that )?you(?:'re| are) (?:a )?human|press (?:&|and) hold|enter the characters you see|sorry, we just need to make sure|access denied|attention required|sorry!?.{0,20}something went wrong|unusual traffic|pardon our interruption|automated access/i.test(t);}
+  function blocked(){
+    if([...document.querySelectorAll('iframe#px-captcha-modal, #px-captcha, iframe[title*="challenge" i]')].some(seenVisible))return true;
+    const t=S.clean(document.title+' '+document.body?.innerText?.slice(0,4500));
+    // "Press and hold" is also a normal instruction on electronic toy pages.
+    // Treat it as a challenge only when the page heading identifies a check.
+    const heading=S.clean(document.title+' '+text(document.querySelector('h1')));
+    if(/press (?:&|and) hold/i.test(heading)&&/human|robot|security|verify/i.test(t))return true;
+    return /robot or human|verify (?:that )?you(?:'re| are) (?:a )?human|enter the characters you see|sorry, we just need to make sure|access denied|attention required|sorry!?.{0,20}something went wrong|unusual traffic|pardon our interruption|automated access/i.test(t);
+  }
   function structured(){
     const objects=[];
     function walk(v,depth=0){if(!v||typeof v!=='object'||depth>12)return;if(Array.isArray(v)){v.slice(0,10000).forEach(x=>walk(x,depth+1));return;}if([v['@type']].flat().includes('ProductGroup')&&Array.isArray(v.hasVariant)){

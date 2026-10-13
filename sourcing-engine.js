@@ -167,7 +167,10 @@
               const all=(found.products||[]).map(p=>({...p,pre:S.match(lead.source,p)})).sort((a,b)=>b.pre.score-a.pre.score);
               lead.searches.push({query,total:all.length,rejected:all.filter(p=>p.pre.level==='conflict').length,top:all.slice(0,4).map(p=>({asin:p.asin,title:p.title,match:p.pre}))});
               const identifierQuery=Boolean(S.gtin(query));
-              const ranked=all.filter(p=>p.pre.level!=='conflict'&&(p.pre.level!=='weak'||identifierQuery&&p.pre.score>=24));
+              // Search titles often omit brand/attributes and reorder long toy
+              // names. Inspect a promising title candidate on its detail page;
+              // only the final identity checks can make it comparable.
+              const ranked=all.filter(p=>p.pre.level!=='conflict'&&(p.pre.level!=='weak'||p.pre.score>=50||identifierQuery&&p.pre.score>=24));
               for(const result of ranked.slice(0,2)){
                 if(seen.has(result.asin))continue;seen.add(result.asin);
                 const p=await this.amazon(result.url);if(p.missing)continue;

@@ -22,3 +22,11 @@ test('parent style compares each exposed exact size, not a random parent match',
  const reader=new Reader(),variants=[{...source,url:source.url+'-small',size:'S'},{...source,url:source.url+'-large',size:'L'}];const open=reader.open.bind(reader);reader.open=async(url,kind)=>kind==='retail'&&url===source.url?{isProduct:true,products:[],variantProducts:variants,url}:kind==='retail'?{isProduct:true,products:[variants.find(v=>v.url===url)],url}:open(url,kind);
  const job=E.newJob({url:source.url,products:[source]});await new E.Runner({reader,save:async()=>{}}).run(job);assert.equal(job.status,'complete');assert.equal(job.leads.length,2);assert.deepEqual(job.leads.map(l=>l.source.size),['S','L']);assert(job.leads.every(l=>l.source.detailVerified));
 });
+test('reordered search title is inspected before rejecting an exact UPC product',async()=>{
+ const item={...source,title:'19 PCS Realistic Dinosaur Figures & Trees for Toddlers, Dinosaur Toys with Activity Play Mat & Cage, Dino Playset Toys for Kids Boys Girls Gift 3-5',brand:'',model:'',gtins:['840494318812'],color:''};
+ const candidate={...item,asin:'B0DDSW14H1',url:'https://www.amazon.com/dp/B0DDSW14H1',title:'JOYIN 19 PCS Dinosaur Toys with Activity Play Mat & Storage Cage, 6 Piece Large Soft Dinosaur Figures with an Educational Book, Realistic Dinosaur Figures & Trees for Toddlers Kids Ages 3-5'};
+ assert.equal(Sourcing.match(item,{title:candidate.title}).level,'weak');
+ const reader=new Reader();reader.open=async(url,kind)=>kind==='retail'?{isProduct:true,products:[item],url}:kind==='amazonSearch'?{products:url.includes('840494318812')?[]:[{title:candidate.title,asin:candidate.asin,url:candidate.url}],url}:candidate;
+ const job=E.newJob({url:item.url,products:[item]});await new E.Runner({reader,save:async()=>{}}).run(job);
+ assert.equal(job.leads[0].candidates[0].asin,candidate.asin);assert.equal(job.leads[0].candidates[0].match.level,'identifier');
+});

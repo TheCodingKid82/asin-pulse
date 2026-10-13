@@ -34,3 +34,8 @@ test('Boscov product parses first-party data, never stock count as a sales rank'
 test('interrupted Amazon request is blocked, not an empty successful search',()=>{
  const w=page('carters-product.html','https://www.amazon.com/s?k=123');w.document.title='Sorry! Something went wrong!';w.document.body.textContent='Sorry! Something went wrong! Please try again.';assert.equal(w.SourcingPage.amazonSearch().blocked,true);w.close();
 });
+test('press and hold in a toy description is not a CAPTCHA',()=>{
+ const w=page('carters-product.html','https://www.amazon.com/dp/B0CSQK1F8N');w.document.title='Green Goblin Electronic Pumpkin';w.document.body.innerHTML='<h1 id="productTitle">Green Goblin Electronic Pumpkin</h1><ul><li>Press and hold the button for lights and sounds.</li></ul>';
+ assert.equal(w.SourcingPage.amazonProduct().blocked,false);
+ w.document.title='Robot or human?';w.document.body.innerHTML='<h1>Press and hold</h1>Verify you are human';assert.equal(w.SourcingPage.amazonProduct().blocked,true);w.close();
+});
